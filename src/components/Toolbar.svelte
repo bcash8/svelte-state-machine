@@ -51,9 +51,16 @@
 		aspect-ratio: 1 / 1;
 		background-color: #00000000;
 		cursor: pointer;
+		opacity: 0.7;
+		transition: 0.2s ease-in-out;
+	}
+
+	.tool:hover {
+		opacity: 1;
 	}
 
 	.tool.selected {
+		opacity: 1;
 		background-color: var(--primary-color);
 	}
 </style>

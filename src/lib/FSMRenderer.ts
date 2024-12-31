@@ -15,6 +15,7 @@ export class FSMRenderer {
 	private statePosition: Map<string, Position>;
 	private stateRadius: number = 30;
 	private fsm: FSM;
+	#scale: number = 50;
 	#tempArrow: Arrow | null = null;
 	#selectedStateName: string | null = null;
 	#highlightedStates: Set<string> = new Set();
@@ -50,6 +51,16 @@ export class FSMRenderer {
 		const position = this.statePosition.get(stateName);
 		if (!position) throw new Error(`Position for state ${stateName} not set`);
 		return position;
+	}
+
+	set scale(value: number) {
+		if (value > 0 && value <= 100) {
+			this.#scale = value;
+		}
+	}
+
+	get scale() {
+		return this.#scale;
 	}
 
 	set selectedStateName(state: string | null) {
@@ -97,7 +108,7 @@ export class FSMRenderer {
 		this.ctx.fillStyle = 'white';
 
 		this.ctx.beginPath();
-		this.ctx.arc(x, y, this.stateRadius, 0, 2 * Math.PI);
+		this.ctx.arc(x, y, this.stateRadius * (this.scale / 100), 0, 2 * Math.PI);
 		this.ctx.fillStyle =
 			isCurrent || this.#highlightedStates.has(state.name)
 				? getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color')
@@ -132,25 +143,42 @@ export class FSMRenderer {
 			text: transition.input,
 			radius: this.stateRadius
 		});
+
 	}
 
 	drawArrow({ from, to, text = '', radius = 0 }: Arrow) {
-		const dx = to.x - from.x;
-		const dy = to.y - from.y;
-		const length = Math.sqrt(dx * dx + dy * dy);
-		const peakHeight = length / 5;
-		const arrowLength = 15;
+		let start = from;
+		let end = to;
+		let dx = start.x - end.x;
+		let dy = start.y - end.y;
+		let length = Math.sqrt(dx * dx + dy * dy);
+		let peakHeight = length / 5;
+		if (length === 0) {
+			start = {
+				x: from.x + Math.cos(5 * Math.PI / 6) * radius,
+				y: from.y - Math.sin(5 * Math.PI / 6) * radius
+			}
 
-		if (length <= radius * 2) {
-			console.log('Distance between points must be greater than the radius.');
-			return;
+			end = {
+				x: from.x + Math.cos(Math.PI / 6) * radius,
+				y: from.y - Math.sin(Math.PI / 6) * radius
+			}
+
+			dx = start.x - end.x;
+			dy = start.y - end.y;
+			length = Math.sqrt(dx * dx + dy * dy);
+			peakHeight = length;
+			radius = 0;
 		}
+
+
+		const arrowLength = 15;
 
 		const direction = { x: dx / length, y: dy / length };
 
 		const midpoint = {
-			x: (from.x + to.x) / 2,
-			y: (from.y + to.y) / 2
+			x: (start.x + end.x) / 2,
+			y: (start.y + end.y) / 2
 		};
 
 		const perpendicular = { x: -direction.y, y: direction.x };
@@ -163,15 +191,16 @@ export class FSMRenderer {
 		// Compute the visible endpoint by projecting the curve towards the circle
 		let t = 1 - (radius + arrowLength) / length; // Parametric position near the end of the curve
 		const visibleEnd = {
-			x: Math.pow(1 - t, 2) * from.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * to.x,
-			y: Math.pow(1 - t, 2) * from.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * to.y
+			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
+			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
 		};
+
 
 		// Compute the visible startpoint by projecting the curve towards the circle
 		t = radius / length; // Parametric position near the beginning of the curve
 		const visibleStart = {
-			x: Math.pow(1 - t, 2) * from.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * to.x,
-			y: Math.pow(1 - t, 2) * from.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * to.y
+			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
+			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
 		};
 
 		this.ctx.beginPath();
@@ -187,8 +216,8 @@ export class FSMRenderer {
 		// Calculate the tangent of the curve at the visible endpoint
 		t = 1 - radius / length;
 		const tangent = {
-			x: 2 * (1 - t) * (controlPoint.x - from.x) + 2 * t * (to.x - controlPoint.x),
-			y: 2 * (1 - t) * (controlPoint.y - from.y) + 2 * t * (to.y - controlPoint.y)
+			x: 2 * (1 - t) * (controlPoint.x - start.x) + 2 * t * (end.x - controlPoint.x),
+			y: 2 * (1 - t) * (controlPoint.y - start.y) + 2 * t * (end.y - controlPoint.y)
 		};
 
 		const tangentLength = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
@@ -235,8 +264,8 @@ export class FSMRenderer {
 
 		t = 0.5;
 		const textPosition = {
-			x: Math.pow(1 - t, 2) * from.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * to.x,
-			y: Math.pow(1 - t, 2) * from.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * to.y
+			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
+			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
 		};
 		this.ctx.fillStyle = 'white';
 		this.ctx.font = '16px Arial';
@@ -254,6 +283,7 @@ export class FSMRenderer {
 	}
 
 	resizeCanvas() {
+		if (!this.canvas) return;
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 		this.canvas.width = width * devicePixelRatio;

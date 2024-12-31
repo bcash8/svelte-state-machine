@@ -11,7 +11,6 @@ export class StateTool implements Tool {
 	onDeactivate(_renderer: FSMRenderer) {}
 
 	onMouseDown(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
-		console.log('Clkic');
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
 		const newState = new State({ name: `q${fsm.getNumberOfStates()}` });
 		fsm.addState(newState);

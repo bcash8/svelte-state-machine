@@ -5,13 +5,21 @@ import type { FSM } from '$lib/states/FSM';
 export class TransitionTool implements Tool {
 	name: ToolName = 'Transition';
 	private fromState: string | null = null;
+	private openDialog: () => void;
+	private pendingTransiton: { from: string; to: string; } | null = null;
 
-	onActivate(_renderer: FSMRenderer) {}
+	constructor(openDialog: () => void) {
+		this.openDialog = openDialog;
+	}
+
+	onActivate(_renderer: FSMRenderer) { }
 
 	onDeactivate(renderer: FSMRenderer) {
 		this.fromState = null;
 		renderer.tempArrow = null;
+		renderer.selectedStateName = null;
 		renderer.clearHighlightedStates();
+		renderer.draw();
 	}
 
 	onMouseDown(event: MouseEvent, renderer: FSMRenderer) {
@@ -35,13 +43,14 @@ export class TransitionTool implements Tool {
 		}
 	}
 
-	onMouseUp(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
+	onMouseUp(event: MouseEvent, renderer: FSMRenderer, _fsm: FSM) {
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
 		const toState = renderer.getStateAtPosition({ x, y });
 
 		if (this.fromState && toState) {
-			const fromStateObj = fsm.getState(this.fromState);
-			fromStateObj?.addTransition('input', toState);
+			const fromState = this.fromState
+			this.pendingTransiton = { from: fromState, to: toState };
+			this.openDialog();
 		}
 
 		this.fromState = null;
@@ -51,6 +60,15 @@ export class TransitionTool implements Tool {
 		renderer.draw();
 	}
 
+	onDialogConfirm(input: string, renderer: FSMRenderer, fsm: FSM) {
+		if (this.pendingTransiton) {
+			const state = fsm.getState(this.pendingTransiton.from);
+			state?.addTransition(input, this.pendingTransiton.to);
+			this.pendingTransiton = null;
+			renderer.draw();
+		}
+	}
+
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {
 		const rect = renderer.canvas.getBoundingClientRect();
 		return {
@@ -58,4 +76,8 @@ export class TransitionTool implements Tool {
 			y: (event.clientY - rect.top) * window.devicePixelRatio
 		};
 	}
+}
+
+export function toolIsTransitionTool(tool: Tool): tool is TransitionTool {
+	return tool.name === 'Transition';
 }

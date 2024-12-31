@@ -15,10 +15,11 @@ export class SelectTool implements Tool {
 		this.isDragging = false;
 		this.selectedState = null;
 		renderer.selectedStateName = null;
+		renderer.clearHighlightedStates();
+		renderer.draw();
 	}
 
 	onMouseDown(event: MouseEvent, renderer: FSMRenderer) {
-		console.log('down');
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
 		this.selectedState = renderer.getStateAtPosition({ x, y });
 		if (this.selectedState) {
@@ -26,6 +27,7 @@ export class SelectTool implements Tool {
 			renderer.selectedStateName = this.selectedState;
 			const statePosition = renderer.getStatePosition(this.selectedState);
 			this.dragOffset = { x: x - statePosition.x, y: y - statePosition.y };
+			renderer.draw();
 		}
 	}
 
