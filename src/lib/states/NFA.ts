@@ -1,12 +1,15 @@
 import { FSM } from './FSM';
 
 export class NFA extends FSM {
-	constructor(initialState: string) {
-		super(initialState);
+	initialState: string | null;
+	constructor() {
+		super();
+		this.initialState = null;
 	}
 
 	run(input: string[]): boolean {
-		let currentStates = [this.currentState];
+		if (this.initialState === null) return false;
+		let currentStates = [this.initialState];
 
 		for (const symbol of input) {
 			const nextStates: string[] = [];

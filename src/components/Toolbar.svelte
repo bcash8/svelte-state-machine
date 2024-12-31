@@ -1,23 +1,29 @@
 <script lang="ts">
 	import HandPointing from 'phosphor-svelte/lib/HandPointing';
 	import Circle from 'phosphor-svelte/lib/Circle';
+	import ArrowArcRight from 'phosphor-svelte/lib/ArrowArcRight';
 	import type { Component } from 'svelte';
-
-	let selectedTool = $state<string | null>('Select');
+	import type { Tool, ToolName } from '$lib/tools/Tool';
+	let {
+		selectedTool,
+		setSelectedTool
+	}: { selectedTool: Tool; setSelectedTool: (toolName: ToolName) => void } = $props();
 </script>
 
-{#snippet Tool(props: { label: string; value: string; icon: Component })}
+{#snippet Tool(props: { name: ToolName; icon: Component })}
 	<button
-		class="tool {selectedTool === props.value ? 'selected' : ''}"
-		onclick={() => (selectedTool = props.value)}
+		class="tool {selectedTool.name === props.name ? 'selected' : ''}"
+		onclick={() => setSelectedTool(props.name)}
+		title={props.name}
 	>
 		<props.icon />
 	</button>
 {/snippet}
 
 <div class="toolbar">
-	{@render Tool({ label: 'Select', value: 'Select', icon: HandPointing })}
-	{@render Tool({ label: 'State', value: 'State', icon: Circle })}
+	{@render Tool({ name: 'Select', icon: HandPointing })}
+	{@render Tool({ name: 'State', icon: Circle })}
+	{@render Tool({ name: 'Transition', icon: ArrowArcRight })}
 </div>
 
 <style>

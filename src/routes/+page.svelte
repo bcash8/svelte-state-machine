@@ -1,91 +1,59 @@
 <script lang="ts">
-	import { updated } from '$app/state';
 	import { FSMRenderer } from '$lib/FSMRenderer';
 	import { NFA } from '$lib/states/NFA';
-	import { State } from '$lib/states/State';
 	import { onMount } from 'svelte';
 	import Toolbar from '../components/Toolbar.svelte';
+	import { SelectTool } from '$lib/tools/SelectTool';
+	import { StateTool } from '$lib/tools/StateTool';
+	import { TransitionTool } from '$lib/tools/TransitionTool';
+	import type { Tool, ToolName } from '$lib/tools/Tool';
 
 	let canvas: HTMLCanvasElement;
 	let renderer: FSMRenderer;
-	let width: number;
-	let height: number;
 	let nfa: NFA;
-	let selectedState: string | null = null;
-	let isDragging = false;
-	let dragOffset = { x: 0, y: 0 };
 
-	function updateDimensions() {
-		if (renderer && nfa) {
-			renderer.resizeCanvas();
-			renderer.clearCanvas();
-			const { states, transitions } = nfa.getVisualizationData();
-			states.forEach((state) => renderer.drawState(state));
-			transitions.forEach((transition) => renderer.drawTransition(transition));
-		}
-	}
+	const tools: Record<ToolName, Tool> = {
+		Select: new SelectTool(),
+		State: new StateTool(),
+		Transition: new TransitionTool()
+	};
 
-	function onMouseDown(event: MouseEvent) {
-		const { x, y } = getCanvasCoordinates(event);
-		selectedState = renderer.getStateAtPosition({ x, y });
-		if (selectedState) {
-			renderer.selectedState = selectedState;
-			isDragging = true;
-			const statePosition = renderer.getStatePosition(selectedState);
-			dragOffset = { x: x - statePosition.x, y: y - statePosition.y };
-		}
-	}
+	let selectedTool = $state<Tool>(tools['Select']);
 
-	function onMouseUp() {
-		isDragging = false;
-		selectedState = null;
-		renderer.selectedState = null;
-		renderer.draw();
-	}
-
-	function onMouseMove(event: MouseEvent) {
-		if (isDragging && selectedState) {
-			const { x, y } = getCanvasCoordinates(event);
-			const newPosition = { x: x - dragOffset.x, y: y - dragOffset.y };
-			renderer.setStatePosition(selectedState, newPosition);
-			renderer.draw();
-		}
-	}
-
-	function getCanvasCoordinates(event: MouseEvent) {
-		const rect = canvas.getBoundingClientRect();
-		return {
-			x: (event.clientX - rect.left) * window.devicePixelRatio,
-			y: (event.clientY - rect.top) * window.devicePixelRatio
-		};
+	function setSelectedTool(toolName: ToolName) {
+		selectedTool.onDeactivate(renderer);
+		selectedTool = tools[toolName];
+		selectedTool.onActivate(renderer);
 	}
 
 	onMount(() => {
-		nfa = new NFA('q0');
+		console.log('mount');
+		if (!canvas) {
+			console.error('Missing Canvas');
+			return;
+		}
+		nfa = new NFA();
 		renderer = new FSMRenderer(canvas, nfa);
-		renderer.setStatePosition('q0', { x: 100, y: 300 });
 		renderer.resizeCanvas();
 
-		const q0 = new State({ name: 'q0', isAccepting: false });
-		nfa.addState(q0);
-		const q1 = new State({ name: 'q1', isAccepting: true });
-		nfa.addState(q1);
-		renderer.setStatePosition('q1', { x: 500, y: 300 });
+		window.addEventListener('resize', renderer.resizeCanvas);
+		const mouseDownHandler = (event: MouseEvent) => selectedTool.onMouseDown(event, renderer, nfa);
+		const mouseMoveHandler = (event: MouseEvent) => selectedTool.onMouseMove(event, renderer, nfa);
+		const mouseUpHandler = (event: MouseEvent) => selectedTool.onMouseUp(event, renderer, nfa);
+		canvas.addEventListener('mousedown', mouseDownHandler);
+		canvas.addEventListener('mousemove', mouseMoveHandler);
+		canvas.addEventListener('mouseup', mouseUpHandler);
 
-		q1.addTransition('a', 'q0');
-		q0.addTransition('b', 'q1');
-
-		renderer.draw();
-		window.addEventListener('resize', updateDimensions);
-		canvas.addEventListener('mousedown', onMouseDown);
-		canvas.addEventListener('mousemove', onMouseMove);
-		canvas.addEventListener('mouseup', onMouseUp);
-
-		return () => window.removeEventListener('resize', updateDimensions);
+		return () => {
+			window.removeEventListener('resize', renderer.resizeCanvas);
+			canvas.removeEventListener('mousedown', mouseDownHandler);
+			canvas.removeEventListener('mousemove', mouseMoveHandler);
+			canvas.removeEventListener('mouseup', mouseUpHandler);
+		};
 	});
 </script>
 
-<Toolbar />
+<Toolbar {selectedTool} {setSelectedTool} />
 <canvas bind:this={canvas}></canvas>
 
 <style>
