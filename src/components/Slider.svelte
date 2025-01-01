@@ -1,21 +1,14 @@
 <script lang="ts">
-	let { onChange }: { onChange: (value: number) => void } = $props();
-  function handleChange(e: Event) {
-    const target = e.target;
-    if (!target || !(target instanceof HTMLInputElement)) return;
-    onChange(target.valueAsNumber)
-  }
+	let { onChange, value }: { onChange: (value: number) => void; value: number } = $props();
+	function handleChange(e: Event) {
+		const target = e.target;
+		if (!target || !(target instanceof HTMLInputElement)) return;
+		onChange(target.valueAsNumber);
+	}
 </script>
 
 <div class="slider-container">
-	<input
-		type="range"
-		min="1"
-		max="100"
-		value="50"
-		class="slider"
-		onchange={handleChange}
-	/>
+	<input type="range" min="50" max="200" class="slider" onchange={handleChange} {value} />
 </div>
 
 <style>

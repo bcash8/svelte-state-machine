@@ -13,9 +13,8 @@ export class FSMRenderer {
 	public canvas: HTMLCanvasElement;
 	private ctx: CanvasRenderingContext2D;
 	private statePosition: Map<string, Position>;
-	private stateRadius: number = 30;
 	private fsm: FSM;
-	#scale: number = 50;
+	#scale: number = 100;
 	#tempArrow: Arrow | null = null;
 	#selectedStateName: string | null = null;
 	#highlightedStates: Set<string> = new Set();
@@ -24,12 +23,14 @@ export class FSMRenderer {
 		this.canvas = canvas;
 		const ctx = canvas.getContext('2d');
 		if (!ctx) throw new Error('Failed to get 2D context');
+
 		this.ctx = ctx;
 		this.statePosition = new Map();
 		const devicePixelRatio = window.devicePixelRatio || 1;
 		ctx.scale(devicePixelRatio, devicePixelRatio);
-
 		this.fsm = fsm;
+
+		this.scale = Number(localStorage.getItem('scale')) || 100;
 	}
 
 	setStatePosition(stateName: string, position: Position) {
@@ -54,13 +55,34 @@ export class FSMRenderer {
 	}
 
 	set scale(value: number) {
-		if (value > 0 && value <= 100) {
+		if (value > 0 && value <= 200) {
 			this.#scale = value;
+			localStorage.setItem('scale', value.toString());
 		}
 	}
 
 	get scale() {
 		return this.#scale;
+	}
+
+	get stateRadius() {
+		return config.defaultStateRaidus * (this.scale / 100);
+	}
+
+	get arrowThickness() {
+		return config.defaultArrowThickness * (this.scale / 100);
+	}
+
+	get arrowLength() {
+		return config.defaultArrowLength * (this.scale / 100);
+	}
+
+	get transitionTextOffset() {
+		return config.defaultTransitionTextOffset * (this.scale / 100);
+	}
+
+	get fontSize() {
+		return config.defaultFontSize * (this.scale / 100);
 	}
 
 	set selectedStateName(state: string | null) {
@@ -108,7 +130,7 @@ export class FSMRenderer {
 		this.ctx.fillStyle = 'white';
 
 		this.ctx.beginPath();
-		this.ctx.arc(x, y, this.stateRadius * (this.scale / 100), 0, 2 * Math.PI);
+		this.ctx.arc(x, y, this.stateRadius, 0, 2 * Math.PI);
 		this.ctx.fillStyle =
 			isCurrent || this.#highlightedStates.has(state.name)
 				? getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color')
@@ -116,7 +138,7 @@ export class FSMRenderer {
 		this.ctx.fill();
 
 		this.ctx.fillStyle = 'black';
-		this.ctx.font = '16px Arial';
+		this.ctx.font = `${this.fontSize}px Arial`;
 		this.ctx.textAlign = 'center';
 		this.ctx.textBaseline = 'middle';
 		this.ctx.fillText(state.name, x, y);
@@ -143,7 +165,6 @@ export class FSMRenderer {
 			text: transition.input,
 			radius: this.stateRadius
 		});
-
 	}
 
 	drawArrow({ from, to, text = '', radius = 0 }: Arrow) {
@@ -152,17 +173,17 @@ export class FSMRenderer {
 		let dx = start.x - end.x;
 		let dy = start.y - end.y;
 		let length = Math.sqrt(dx * dx + dy * dy);
-		let peakHeight = length / 5;
+		let peakHeight = (length / 10) * (this.scale / 100);
 		if (length === 0) {
 			start = {
-				x: from.x + Math.cos(5 * Math.PI / 6) * radius,
-				y: from.y - Math.sin(5 * Math.PI / 6) * radius
-			}
+				x: from.x + Math.cos((5 * Math.PI) / 6) * radius,
+				y: from.y - Math.sin((5 * Math.PI) / 6) * radius
+			};
 
 			end = {
 				x: from.x + Math.cos(Math.PI / 6) * radius,
 				y: from.y - Math.sin(Math.PI / 6) * radius
-			}
+			};
 
 			dx = start.x - end.x;
 			dy = start.y - end.y;
@@ -170,9 +191,6 @@ export class FSMRenderer {
 			peakHeight = length;
 			radius = 0;
 		}
-
-
-		const arrowLength = 15;
 
 		const direction = { x: dx / length, y: dy / length };
 
@@ -189,12 +207,11 @@ export class FSMRenderer {
 		};
 
 		// Compute the visible endpoint by projecting the curve towards the circle
-		let t = 1 - (radius + arrowLength) / length; // Parametric position near the end of the curve
+		let t = 1 - (radius + this.arrowLength) / length; // Parametric position near the end of the curve
 		const visibleEnd = {
 			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
 			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
 		};
-
 
 		// Compute the visible startpoint by projecting the curve towards the circle
 		t = radius / length; // Parametric position near the beginning of the curve
@@ -208,7 +225,7 @@ export class FSMRenderer {
 		this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, visibleEnd.x, visibleEnd.y);
 
 		this.ctx.strokeStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
-		this.ctx.lineWidth = 2;
+		this.ctx.lineWidth = this.arrowThickness;
 		this.ctx.stroke();
 
 		// Draw arrow
@@ -227,31 +244,31 @@ export class FSMRenderer {
 		};
 
 		const arrowEnd = {
-			x: visibleEnd.x + normalizedTangent.x * arrowLength,
-			y: visibleEnd.y + normalizedTangent.y * arrowLength
+			x: visibleEnd.x + normalizedTangent.x * this.arrowLength,
+			y: visibleEnd.y + normalizedTangent.y * this.arrowLength
 		};
 
 		const arrowAngle = Math.PI / 6;
 		const leftWing = {
 			x:
 				arrowEnd.x -
-				Math.cos(arrowAngle) * arrowLength * normalizedTangent.x +
-				Math.sin(arrowAngle) * arrowLength * normalizedTangent.y,
+				Math.cos(arrowAngle) * this.arrowLength * normalizedTangent.x +
+				Math.sin(arrowAngle) * this.arrowLength * normalizedTangent.y,
 			y:
 				arrowEnd.y -
-				Math.sin(arrowAngle) * arrowLength * normalizedTangent.x -
-				Math.cos(arrowAngle) * arrowLength * normalizedTangent.y
+				Math.sin(arrowAngle) * this.arrowLength * normalizedTangent.x -
+				Math.cos(arrowAngle) * this.arrowLength * normalizedTangent.y
 		};
 
 		const rightWing = {
 			x:
 				arrowEnd.x -
-				Math.cos(-arrowAngle) * arrowLength * normalizedTangent.x +
-				Math.sin(-arrowAngle) * arrowLength * normalizedTangent.y,
+				Math.cos(-arrowAngle) * this.arrowLength * normalizedTangent.x +
+				Math.sin(-arrowAngle) * this.arrowLength * normalizedTangent.y,
 			y:
 				arrowEnd.y -
-				Math.sin(-arrowAngle) * arrowLength * normalizedTangent.x -
-				Math.cos(-arrowAngle) * arrowLength * normalizedTangent.y
+				Math.sin(-arrowAngle) * this.arrowLength * normalizedTangent.x -
+				Math.cos(-arrowAngle) * this.arrowLength * normalizedTangent.y
 		};
 
 		this.ctx.fillStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
@@ -264,18 +281,23 @@ export class FSMRenderer {
 
 		t = 0.5;
 		const textPosition = {
-			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
-			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
+			x:
+				Math.pow(1 - t, 2) * start.x +
+				2 * (1 - t) * t * controlPoint.x +
+				Math.pow(t, 2) * end.x +
+				perpendicular.x * this.transitionTextOffset,
+			y:
+				Math.pow(1 - t, 2) * start.y +
+				2 * (1 - t) * t * controlPoint.y +
+				Math.pow(t, 2) * end.y +
+				perpendicular.y * this.transitionTextOffset
 		};
+
 		this.ctx.fillStyle = 'white';
-		this.ctx.font = '16px Arial';
+		this.ctx.font = `${this.fontSize}px Arial`;
 		this.ctx.textAlign = 'center';
 		this.ctx.textBaseline = 'middle';
-		this.ctx.fillText(
-			text,
-			textPosition.x + perpendicular.x * 30,
-			textPosition.y + perpendicular.y * 30
-		);
+		this.ctx.fillText(text, textPosition.x, textPosition.y);
 	}
 
 	clearCanvas() {
@@ -292,3 +314,11 @@ export class FSMRenderer {
 		this.canvas.style.height = `${height}px`;
 	}
 }
+
+const config = {
+	defaultStateRaidus: 20,
+	defaultArrowThickness: 2,
+	defaultArrowLength: 15,
+	defaultFontSize: 16,
+	defaultTransitionTextOffset: 15
+};

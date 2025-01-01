@@ -9,11 +9,13 @@
 	import type { Tool, ToolName } from '$lib/tools/Tool';
 	import Dialog from '../components/Dialog.svelte';
 	import Slider from '../components/Slider.svelte';
+	import RunMenu from '../components/RunMenu.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let renderer: FSMRenderer;
 	let nfa: NFA;
 	let dialogVisible = $state(false);
+	let scale = $state(100);
 
 	const tools: Record<ToolName, Tool> = {
 		Select: new SelectTool(),
@@ -46,6 +48,7 @@
 
 	function onSizeSliderChange(value: number) {
 		renderer.scale = value;
+		scale = value;
 		renderer.draw();
 	}
 
@@ -57,6 +60,7 @@
 		nfa = new NFA();
 		renderer = new FSMRenderer(canvas, nfa);
 		renderer.resizeCanvas();
+		scale = renderer.scale;
 		window.addEventListener('resize', renderer.resizeCanvas);
 		const mouseDownHandler = (event: MouseEvent) => selectedTool.onMouseDown(event, renderer, nfa);
 		const mouseMoveHandler = (event: MouseEvent) => selectedTool.onMouseMove(event, renderer, nfa);
@@ -75,10 +79,11 @@
 </script>
 
 <Toolbar {selectedTool} {setSelectedTool} />
+<RunMenu />
 <canvas bind:this={canvas}></canvas>
 <Dialog visible={dialogVisible} {onConfirm} {onCancel} />
 <div class="slider-container">
-	<Slider onChange={onSizeSliderChange} />
+	<Slider onChange={onSizeSliderChange} value={scale} />
 </div>
 
 <style>
