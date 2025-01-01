@@ -1,7 +1,7 @@
 import type { FSMRenderer } from '$lib/FSMRenderer';
 import type { FSM } from '$lib/states/FSM';
 
-export type ToolName = 'Select' | 'State' | 'Transition';
+export type ToolName = 'Select' | 'State' | 'Transition' | 'Delete';
 
 export interface Tool {
 	name: ToolName;

@@ -11,6 +11,10 @@ export abstract class FSM {
 		this.states.set(state.name, state);
 	}
 
+	removeState(stateName: string) {
+		this.states.delete(stateName);
+	}
+
 	getState(name: string) {
 		return this.states.get(name);
 	}

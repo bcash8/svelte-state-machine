@@ -10,6 +10,7 @@
 	import Dialog from '../components/Dialog.svelte';
 	import Slider from '../components/Slider.svelte';
 	import RunMenu from '../components/RunMenu.svelte';
+	import { DeleteTool } from '$lib/tools/DeleteTool';
 
 	let canvas: HTMLCanvasElement;
 	let renderer: FSMRenderer;
@@ -20,7 +21,8 @@
 	const tools: Record<ToolName, Tool> = {
 		Select: new SelectTool(),
 		State: new StateTool(),
-		Transition: new TransitionTool(onOpenDialog)
+		Transition: new TransitionTool(onOpenDialog),
+		Delete: new DeleteTool()
 	};
 
 	function onOpenDialog() {

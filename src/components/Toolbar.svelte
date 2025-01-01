@@ -2,6 +2,7 @@
 	import HandPointing from 'phosphor-svelte/lib/HandPointing';
 	import Circle from 'phosphor-svelte/lib/Circle';
 	import ArrowArcRight from 'phosphor-svelte/lib/ArrowArcRight';
+	import Eraser from 'phosphor-svelte/lib/Eraser';
 	import type { Component } from 'svelte';
 	import type { Tool, ToolName } from '$lib/tools/Tool';
 	let {
@@ -24,6 +25,7 @@
 	{@render Tool({ name: 'Select', icon: HandPointing })}
 	{@render Tool({ name: 'State', icon: Circle })}
 	{@render Tool({ name: 'Transition', icon: ArrowArcRight })}
+	{@render Tool({ name: 'Delete', icon: Eraser })}
 </div>
 
 <style>
