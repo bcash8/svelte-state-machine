@@ -1,4 +1,4 @@
-import type { FSMRenderer } from '$lib/FSMRenderer';
+import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
 import type { FSM } from '$lib/states/FSM';
 
 export type ToolName = 'Select' | 'State' | 'Transition' | 'Delete';

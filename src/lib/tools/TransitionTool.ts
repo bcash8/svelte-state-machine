@@ -1,18 +1,18 @@
 import type { Tool, ToolName } from './Tool';
-import type { FSMRenderer } from '$lib/FSMRenderer';
+import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
 import type { FSM } from '$lib/states/FSM';
 
 export class TransitionTool implements Tool {
 	name: ToolName = 'Transition';
 	private fromState: string | null = null;
 	private openDialog: () => void;
-	private pendingTransiton: { from: string; to: string; } | null = null;
+	private pendingTransiton: { from: string; to: string } | null = null;
 
 	constructor(openDialog: () => void) {
 		this.openDialog = openDialog;
 	}
 
-	onActivate(_renderer: FSMRenderer) { }
+	onActivate(_renderer: FSMRenderer) {}
 
 	onDeactivate(renderer: FSMRenderer) {
 		this.fromState = null;
@@ -48,7 +48,7 @@ export class TransitionTool implements Tool {
 		const toState = renderer.getStateAtPosition({ x, y });
 
 		if (this.fromState && toState) {
-			const fromState = this.fromState
+			const fromState = this.fromState;
 			this.pendingTransiton = { from: fromState, to: toState };
 			this.openDialog();
 		}

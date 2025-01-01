@@ -1,5 +1,5 @@
 import type { Tool, ToolName } from './Tool';
-import type { FSMRenderer } from '$lib/FSMRenderer';
+import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
 import type { FSM } from '$lib/states/FSM';
 import { State } from '$lib/states/State';
 

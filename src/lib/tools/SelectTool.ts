@@ -1,4 +1,4 @@
-import type { FSMRenderer } from '$lib/FSMRenderer';
+import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
 import type { Tool, ToolName } from './Tool';
 
 export class SelectTool implements Tool {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FSMRenderer } from '$lib/FSMRenderer';
+	import { FSMRenderer } from '$lib/FSMRenderer.svelte';
 	import { NFA } from '$lib/states/NFA';
 	import { onMount } from 'svelte';
 	import Toolbar from '../components/Toolbar.svelte';
@@ -15,18 +15,17 @@
 	import { ToolManager } from '$lib/tools/ToolManager.svelte';
 
 	let canvas: HTMLCanvasElement;
-	let renderer: FSMRenderer;
+	let renderer: FSMRenderer | undefined = $state();
 	let toolManager: ToolManager | undefined = $state();
 	let nfa: NFA;
 	let dialogVisible = $state(false);
-	let scale = $state(100);
 
 	function onOpenDialog() {
 		dialogVisible = true;
 	}
 
 	function onConfirm(input: string) {
-		if (toolManager?.currentTool && toolIsTransitionTool(toolManager.currentTool)) {
+		if (renderer && toolManager?.currentTool && toolIsTransitionTool(toolManager.currentTool)) {
 			toolManager.currentTool.onDialogConfirm(input, renderer, nfa);
 		}
 		dialogVisible = false;
@@ -37,8 +36,8 @@
 	}
 
 	function onSizeSliderChange(value: number) {
+		if (!renderer) return;
 		renderer.scale = value;
-		scale = value;
 		renderer.draw();
 	}
 
@@ -50,7 +49,6 @@
 		nfa = new NFA();
 		renderer = new FSMRenderer(canvas, nfa);
 		renderer.resizeCanvas();
-		scale = renderer.scale;
 
 		const toolFactory = createToolFactory({ onOpenDialog });
 		toolManager = new ToolManager(toolFactory, renderer, nfa);
@@ -64,7 +62,7 @@
 		canvas.addEventListener('mouseup', mouseUpHandler);
 
 		return () => {
-			window.removeEventListener('resize', renderer.resizeCanvas);
+			if (renderer) window.removeEventListener('resize', renderer.resizeCanvas);
 			canvas.removeEventListener('mousedown', mouseDownHandler);
 			canvas.removeEventListener('mousemove', mouseMoveHandler);
 			canvas.removeEventListener('mouseup', mouseUpHandler);
@@ -80,7 +78,7 @@
 <canvas bind:this={canvas}></canvas>
 <Dialog visible={dialogVisible} {onConfirm} {onCancel} />
 <div class="slider-container">
-	<Slider onChange={onSizeSliderChange} value={scale} />
+	<Slider onChange={onSizeSliderChange} value={renderer?.scale ?? 100} />
 </div>
 
 <style>
