@@ -11,27 +11,23 @@
 	import Slider from '../components/Slider.svelte';
 	import RunMenu from '../components/RunMenu.svelte';
 	import { DeleteTool } from '$lib/tools/DeleteTool';
+	import { createToolFactory } from '$lib/tools/toolFactory';
+	import { ToolManager } from '$lib/tools/ToolManager.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let renderer: FSMRenderer;
+	let toolManager: ToolManager | undefined = $state();
 	let nfa: NFA;
 	let dialogVisible = $state(false);
 	let scale = $state(100);
-
-	const tools: Record<ToolName, Tool> = {
-		Select: new SelectTool(),
-		State: new StateTool(),
-		Transition: new TransitionTool(onOpenDialog),
-		Delete: new DeleteTool()
-	};
 
 	function onOpenDialog() {
 		dialogVisible = true;
 	}
 
 	function onConfirm(input: string) {
-		if (toolIsTransitionTool(tools.Transition)) {
-			tools.Transition.onDialogConfirm(input, renderer, nfa);
+		if (toolManager?.currentTool && toolIsTransitionTool(toolManager.currentTool)) {
+			toolManager.currentTool.onDialogConfirm(input, renderer, nfa);
 		}
 		dialogVisible = false;
 	}
@@ -40,21 +36,13 @@
 		dialogVisible = false;
 	}
 
-	let selectedTool = $state<Tool>(tools['Select']);
-
-	function setSelectedTool(toolName: ToolName) {
-		selectedTool.onDeactivate(renderer);
-		selectedTool = tools[toolName];
-		selectedTool.onActivate(renderer);
-	}
-
 	function onSizeSliderChange(value: number) {
 		renderer.scale = value;
 		scale = value;
 		renderer.draw();
 	}
 
-	onMount(() => {
+	$effect(() => {
 		if (!canvas) {
 			console.error('Missing Canvas');
 			return;
@@ -63,10 +51,14 @@
 		renderer = new FSMRenderer(canvas, nfa);
 		renderer.resizeCanvas();
 		scale = renderer.scale;
+
+		const toolFactory = createToolFactory({ onOpenDialog });
+		toolManager = new ToolManager(toolFactory, renderer, nfa);
+
 		window.addEventListener('resize', renderer.resizeCanvas);
-		const mouseDownHandler = (event: MouseEvent) => selectedTool.onMouseDown(event, renderer, nfa);
-		const mouseMoveHandler = (event: MouseEvent) => selectedTool.onMouseMove(event, renderer, nfa);
-		const mouseUpHandler = (event: MouseEvent) => selectedTool.onMouseUp(event, renderer, nfa);
+		const mouseDownHandler = (event: MouseEvent) => toolManager?.handleMouseDown(event);
+		const mouseMoveHandler = (event: MouseEvent) => toolManager?.handleMouseMove(event);
+		const mouseUpHandler = (event: MouseEvent) => toolManager?.handleMouseUp(event);
 		canvas.addEventListener('mousedown', mouseDownHandler);
 		canvas.addEventListener('mousemove', mouseMoveHandler);
 		canvas.addEventListener('mouseup', mouseUpHandler);
@@ -80,7 +72,10 @@
 	});
 </script>
 
-<Toolbar {selectedTool} {setSelectedTool} />
+<Toolbar
+	selectedTool={toolManager?.currentTool}
+	setSelectedTool={(toolName: ToolName) => toolManager?.setCurrentTool(toolName)}
+/>
 <RunMenu />
 <canvas bind:this={canvas}></canvas>
 <Dialog visible={dialogVisible} {onConfirm} {onCancel} />

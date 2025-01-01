@@ -2,6 +2,7 @@ import type { State } from './State';
 
 export abstract class FSM {
 	states: Map<string, State>;
+	private nextStateNumber = 0;
 
 	constructor() {
 		this.states = new Map();
@@ -35,8 +36,8 @@ export abstract class FSM {
 		return { states, transitions };
 	}
 
-	getNumberOfStates() {
-		return this.states.size;
+	getNextStateNumber() {
+		return this.nextStateNumber++;
 	}
 
 	abstract run(input: string[]): boolean;

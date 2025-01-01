@@ -12,7 +12,7 @@ export class StateTool implements Tool {
 
 	onMouseDown(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
-		const newState = new State({ name: `q${fsm.getNumberOfStates()}` });
+		const newState = new State({ name: `q${fsm.getNextStateNumber()}` });
 		fsm.addState(newState);
 		renderer.setStatePosition(newState.name, { x, y });
 		renderer.draw();

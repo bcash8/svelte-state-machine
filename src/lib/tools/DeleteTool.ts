@@ -9,17 +9,17 @@ export class DeleteTool implements Tool {
 
 	onDeactivate(_renderer: FSMRenderer) {}
 
-	onMouseDown(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
+	onMouseDown(_event: MouseEvent, _renderer: FSMRenderer, _fsm: FSM) {}
+
+	onMouseMove(_event: MouseEvent, _renderer: FSMRenderer) {}
+
+	onMouseUp(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
 		const state = renderer.getStateAtPosition({ x, y });
 		if (state === null) return;
 		fsm.removeState(state);
 		renderer.draw();
 	}
-
-	onMouseMove(_event: MouseEvent, _renderer: FSMRenderer) {}
-
-	onMouseUp(_event: MouseEvent, _renderer: FSMRenderer) {}
 
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {
 		const rect = renderer.canvas.getBoundingClientRect();

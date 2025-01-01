@@ -8,13 +8,13 @@
 	let {
 		selectedTool,
 		setSelectedTool
-	}: { selectedTool: Tool; setSelectedTool: (toolName: ToolName) => void } = $props();
+	}: { selectedTool: Tool | undefined; setSelectedTool?: (toolName: ToolName) => void } = $props();
 </script>
 
 {#snippet Tool(props: { name: ToolName; icon: Component })}
 	<button
-		class="tool {selectedTool.name === props.name ? 'selected' : ''}"
-		onclick={() => setSelectedTool(props.name)}
+		class="tool {selectedTool?.name === props.name ? 'selected' : ''}"
+		onclick={() => setSelectedTool && setSelectedTool(props.name)}
 		title={props.name}
 	>
 		<props.icon />
