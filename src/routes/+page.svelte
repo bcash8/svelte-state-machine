@@ -41,7 +41,7 @@
 		renderer.draw();
 	}
 
-	$effect(() => {
+	onMount(() => {
 		if (!canvas) {
 			console.error('Missing Canvas');
 			return;
