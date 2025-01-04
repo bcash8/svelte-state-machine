@@ -14,11 +14,37 @@ export class DeleteTool implements Tool {
 	onMouseMove(_event: MouseEvent, _renderer: FSMRenderer) {}
 
 	onMouseUp(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
+		// Delete State
 		const { x, y } = this.getCanvasCoordinates(event, renderer);
 		const state = renderer.getStateAtPosition({ x, y });
-		if (state === null) return;
-		fsm.removeState(state);
-		renderer.draw();
+		if (state !== null) {
+			fsm.removeState(state);
+			renderer.removeStatePosition(state);
+			renderer.draw();
+			return;
+		}
+
+		// Delete Transition
+		for (const fromState of fsm.states.values()) {
+			const fromStatePos = renderer.getStatePosition(fromState.name);
+			for (const toStateNames of fromState.transitions.values()) {
+				for (const toStateName of toStateNames) {
+					const toStatePos = renderer.getStatePosition(toStateName);
+					const controlPoint = renderer.getControlPoint(
+						fromStatePos,
+						toStatePos,
+						renderer.stateRadius
+					);
+					if (
+						renderer.nearQuadraticBeizerCurve({ x, y }, fromStatePos, toStatePos, controlPoint, 10)
+					) {
+						fromState.removeTransition(toStateName);
+						renderer.draw();
+						return;
+					}
+				}
+			}
+		}
 	}
 
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {

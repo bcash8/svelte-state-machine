@@ -37,6 +37,10 @@ export class FSMRenderer {
 		this.statePosition.set(stateName, position);
 	}
 
+	removeStatePosition(stateName: string) {
+		this.statePosition.delete(stateName);
+	}
+
 	getStateAtPosition({ x, y }: Position): string | null {
 		for (const [stateName, position] of this.statePosition.entries()) {
 			const dx = x - position.x;
@@ -173,7 +177,117 @@ export class FSMRenderer {
 		let dx = start.x - end.x;
 		let dy = start.y - end.y;
 		let length = Math.sqrt(dx * dx + dy * dy);
-		let peakHeight = (length / 10) * (this.scale / 100);
+		if (length === 0) {
+			start = {
+				x: from.x + Math.cos((5 * Math.PI) / 6) * radius,
+				y: from.y - Math.sin((5 * Math.PI) / 6) * radius
+			};
+
+			end = {
+				x: from.x + Math.cos(Math.PI / 6) * radius,
+				y: from.y - Math.sin(Math.PI / 6) * radius
+			};
+
+			dx = start.x - end.x;
+			dy = start.y - end.y;
+			length = Math.sqrt(dx * dx + dy * dy);
+			radius = 0;
+		}
+
+		const direction = { x: dx / length, y: dy / length };
+
+		const perpendicular = { x: -direction.y, y: direction.x };
+
+		const controlPoint = this.getControlPoint(from, to, radius);
+
+		// Compute the visible endpoint by projecting the curve towards the circle
+		let t = 1 - (radius + this.arrowLength) / length; // Parametric position near the end of the curve
+		const visibleEnd = this.pointOnQuadraticBeizerCurve(start, end, controlPoint, t);
+
+		// Compute the visible startpoint by projecting the curve towards the circle
+		t = radius / length; // Parametric position near the beginning of the curve
+		const visibleStart = this.pointOnQuadraticBeizerCurve(start, end, controlPoint, t);
+
+		this.ctx.beginPath();
+		this.ctx.moveTo(visibleStart.x, visibleStart.y);
+		this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, visibleEnd.x, visibleEnd.y);
+
+		this.ctx.strokeStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
+		this.ctx.lineWidth = this.arrowThickness;
+		this.ctx.stroke();
+
+		// Draw arrow
+		this.drawArrowHead(visibleEnd, controlPoint);
+
+		// Draw Text
+		if (text) {
+			t = 0.5;
+			const textPosition = {
+				x:
+					Math.pow(1 - t, 2) * start.x +
+					2 * (1 - t) * t * controlPoint.x +
+					Math.pow(t, 2) * end.x +
+					perpendicular.x * this.transitionTextOffset,
+				y:
+					Math.pow(1 - t, 2) * start.y +
+					2 * (1 - t) * t * controlPoint.y +
+					Math.pow(t, 2) * end.y +
+					perpendicular.y * this.transitionTextOffset
+			};
+
+			this.ctx.fillStyle = 'white';
+			this.ctx.font = `${this.fontSize}px Arial`;
+			this.ctx.textAlign = 'center';
+			this.ctx.textBaseline = 'middle';
+			this.ctx.fillText(text, textPosition.x, textPosition.y);
+		}
+	}
+
+	drawArrowHead(end: Position, controlPoint: Position) {
+		const arrowLength = this.arrowLength; // Length of the arrowhead
+
+		// Calculate the angle of the tangent at the endpoint
+		const dx = end.x - controlPoint.x;
+		const dy = end.y - controlPoint.y;
+		const angle = Math.atan2(dy, dx);
+		const length = Math.sqrt(dx ** 2 + dy ** 2);
+
+		const ux = dx / length;
+		const uy = dy / length;
+
+		const arrowTip = {
+			x: end.x + ux * arrowLength,
+			y: end.y + uy * arrowLength
+		};
+
+		// Calculate the points for the arrowhead triangle
+		const point1 = {
+			x: arrowTip.x - arrowLength * Math.cos(angle - Math.PI / 7),
+			y: arrowTip.y - arrowLength * Math.sin(angle - Math.PI / 7)
+		};
+
+		const point2 = {
+			x: arrowTip.x - arrowLength * Math.cos(angle + Math.PI / 7),
+			y: arrowTip.y - arrowLength * Math.sin(angle + Math.PI / 7)
+		};
+
+		// Draw the arrowhead
+		this.ctx.fillStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
+		this.ctx.beginPath();
+		this.ctx.moveTo(arrowTip.x, arrowTip.y);
+		this.ctx.lineTo(point1.x, point1.y);
+		this.ctx.lineTo(point2.x, point2.y);
+		this.ctx.closePath();
+		this.ctx.fill();
+	}
+
+	getControlPoint(from: Position, to: Position, radius: number): Position {
+		let dx = from.x - to.x;
+		let dy = from.y - to.y;
+		let length = Math.sqrt(dx * dx + dy * dy);
+		let peakHeight = (length / 15) * (this.scale / 100);
+		let start = from;
+		let end = to;
 		if (length === 0) {
 			start = {
 				x: from.x + Math.cos((5 * Math.PI) / 6) * radius,
@@ -192,112 +306,44 @@ export class FSMRenderer {
 			radius = 0;
 		}
 
-		const direction = { x: dx / length, y: dy / length };
-
 		const midpoint = {
-			x: (start.x + end.x) / 2,
-			y: (start.y + end.y) / 2
+			x: (from.x + to.x) / 2,
+			y: (from.y + to.y) / 2
 		};
 
-		const perpendicular = { x: -direction.y, y: direction.x };
+		const perpendicular = { x: -dy / length, y: dx / length };
 
-		const controlPoint = {
+		return {
 			x: midpoint.x + perpendicular.x * peakHeight,
 			y: midpoint.y + perpendicular.y * peakHeight
 		};
+	}
 
-		// Compute the visible endpoint by projecting the curve towards the circle
-		let t = 1 - (radius + this.arrowLength) / length; // Parametric position near the end of the curve
-		const visibleEnd = {
+	pointOnQuadraticBeizerCurve(start: Position, end: Position, controlPoint: Position, t: number) {
+		return {
 			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
 			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
 		};
+	}
 
-		// Compute the visible startpoint by projecting the curve towards the circle
-		t = radius / length; // Parametric position near the beginning of the curve
-		const visibleStart = {
-			x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * controlPoint.x + Math.pow(t, 2) * end.x,
-			y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * controlPoint.y + Math.pow(t, 2) * end.y
-		};
+	nearQuadraticBeizerCurve(
+		point: Position,
+		start: Position,
+		end: Position,
+		controlPoint: Position,
+		threshold: number
+	) {
+		const BREAKS = 100; // Number of points to sample on the curve
+		for (let i = 0; i <= BREAKS; i++) {
+			const t = i / BREAKS;
+			const pointAtT = this.pointOnQuadraticBeizerCurve(start, end, controlPoint, t);
 
-		this.ctx.beginPath();
-		this.ctx.moveTo(visibleStart.x, visibleStart.y);
-		this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, visibleEnd.x, visibleEnd.y);
-
-		this.ctx.strokeStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
-		this.ctx.lineWidth = this.arrowThickness;
-		this.ctx.stroke();
-
-		// Draw arrow
-
-		// Calculate the tangent of the curve at the visible endpoint
-		t = 1 - radius / length;
-		const tangent = {
-			x: 2 * (1 - t) * (controlPoint.x - start.x) + 2 * t * (end.x - controlPoint.x),
-			y: 2 * (1 - t) * (controlPoint.y - start.y) + 2 * t * (end.y - controlPoint.y)
-		};
-
-		const tangentLength = Math.sqrt(tangent.x * tangent.x + tangent.y * tangent.y);
-		const normalizedTangent = {
-			x: tangent.x / tangentLength,
-			y: tangent.y / tangentLength
-		};
-
-		const arrowEnd = {
-			x: visibleEnd.x + normalizedTangent.x * this.arrowLength,
-			y: visibleEnd.y + normalizedTangent.y * this.arrowLength
-		};
-
-		const arrowAngle = Math.PI / 6;
-		const leftWing = {
-			x:
-				arrowEnd.x -
-				Math.cos(arrowAngle) * this.arrowLength * normalizedTangent.x +
-				Math.sin(arrowAngle) * this.arrowLength * normalizedTangent.y,
-			y:
-				arrowEnd.y -
-				Math.sin(arrowAngle) * this.arrowLength * normalizedTangent.x -
-				Math.cos(arrowAngle) * this.arrowLength * normalizedTangent.y
-		};
-
-		const rightWing = {
-			x:
-				arrowEnd.x -
-				Math.cos(-arrowAngle) * this.arrowLength * normalizedTangent.x +
-				Math.sin(-arrowAngle) * this.arrowLength * normalizedTangent.y,
-			y:
-				arrowEnd.y -
-				Math.sin(-arrowAngle) * this.arrowLength * normalizedTangent.x -
-				Math.cos(-arrowAngle) * this.arrowLength * normalizedTangent.y
-		};
-
-		this.ctx.fillStyle = getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color');
-
-		this.ctx.beginPath();
-		this.ctx.moveTo(arrowEnd.x, arrowEnd.y);
-		this.ctx.lineTo(leftWing.x, leftWing.y);
-		this.ctx.lineTo(rightWing.x, rightWing.y);
-		this.ctx.fill();
-
-		t = 0.5;
-		const textPosition = {
-			x:
-				Math.pow(1 - t, 2) * start.x +
-				2 * (1 - t) * t * controlPoint.x +
-				Math.pow(t, 2) * end.x +
-				perpendicular.x * this.transitionTextOffset,
-			y:
-				Math.pow(1 - t, 2) * start.y +
-				2 * (1 - t) * t * controlPoint.y +
-				Math.pow(t, 2) * end.y +
-				perpendicular.y * this.transitionTextOffset
-		};
-
-		this.ctx.fillStyle = 'white';
-		this.ctx.font = `${this.fontSize}px Arial`;
-		this.ctx.textAlign = 'center';
-		this.ctx.textBaseline = 'middle';
-		this.ctx.fillText(text, textPosition.x, textPosition.y);
+			const distance = Math.sqrt((pointAtT.x - point.x) ** 2 + (pointAtT.y - point.y) ** 2);
+			if (distance < threshold) {
+				return true; // The point is close enough to the curve
+			}
+		}
+		return false;
 	}
 
 	clearCanvas() {

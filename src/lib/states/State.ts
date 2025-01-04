@@ -17,6 +17,15 @@ export class State {
 		}
 	}
 
+	removeTransition(toStateName: string, input?: string) {
+		for (const transition of this.transitions) {
+			if (transition[1].includes(toStateName) && (!input || transition[0] === input)) {
+				const stateIndex = transition[1].findIndex((state) => state === toStateName);
+				transition[1].splice(stateIndex, 1);
+			}
+		}
+	}
+
 	getNextStates(input: string): string[] | undefined {
 		return this.transitions.get(input);
 	}

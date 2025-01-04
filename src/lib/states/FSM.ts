@@ -13,6 +13,9 @@ export abstract class FSM {
 	}
 
 	removeState(stateName: string) {
+		for (const state of this.states.values()) {
+			state.removeTransition(stateName);
+		}
 		this.states.delete(stateName);
 	}
 
