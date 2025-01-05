@@ -13,12 +13,27 @@
 	import { DeleteTool } from '$lib/tools/DeleteTool';
 	import { createToolFactory } from '$lib/tools/toolFactory';
 	import { ToolManager } from '$lib/tools/ToolManager.svelte';
+	import InputList from '../components/InputList.svelte';
+	import ContextMenu from '../components/ContextMenu.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let renderer: FSMRenderer | undefined = $state();
 	let toolManager: ToolManager | undefined = $state();
 	let nfa: NFA;
 	let dialogVisible = $state(false);
+	let inputsToTest = $state<string[]>([]);
+
+	function onRun() {
+		const input = inputsToTest[0];
+		if (input) {
+			const success = nfa.run(Array.from(input));
+			console.log(success);
+		}
+	}
+
+	function setInputsToTest(inputs: string[]) {
+		inputsToTest = inputs;
+	}
 
 	function onOpenDialog() {
 		dialogVisible = true;
@@ -57,9 +72,11 @@
 		const mouseDownHandler = (event: MouseEvent) => toolManager?.handleMouseDown(event);
 		const mouseMoveHandler = (event: MouseEvent) => toolManager?.handleMouseMove(event);
 		const mouseUpHandler = (event: MouseEvent) => toolManager?.handleMouseUp(event);
+		const onContextMenuHandler = (event: MouseEvent) => toolManager?.handleContextMenu(event);
 		canvas.addEventListener('mousedown', mouseDownHandler);
 		canvas.addEventListener('mousemove', mouseMoveHandler);
 		canvas.addEventListener('mouseup', mouseUpHandler);
+		canvas.addEventListener('contextmenu', onContextMenuHandler);
 
 		return () => {
 			if (renderer) window.removeEventListener('resize', renderer.resizeCanvas);
@@ -74,12 +91,14 @@
 	selectedTool={toolManager?.currentTool}
 	setSelectedTool={(toolName: ToolName) => toolManager?.setCurrentTool(toolName)}
 />
-<RunMenu />
+<RunMenu {onRun} />
+<InputList {inputsToTest} {setInputsToTest} />
 <canvas bind:this={canvas}></canvas>
 <Dialog visible={dialogVisible} {onConfirm} {onCancel} />
 <div class="slider-container">
 	<Slider onChange={onSizeSliderChange} value={renderer?.scale ?? 100} />
 </div>
+<ContextMenu />
 
 <style>
 	canvas {

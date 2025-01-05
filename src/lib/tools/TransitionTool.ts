@@ -60,6 +60,8 @@ export class TransitionTool implements Tool {
 		renderer.draw();
 	}
 
+	onContextMenu(_event: MouseEvent, _renderer: FSMRenderer, _fsm: FSM) {}
+
 	onDialogConfirm(input: string, renderer: FSMRenderer, fsm: FSM) {
 		if (this.pendingTransiton) {
 			const state = fsm.getState(this.pendingTransiton.from);

@@ -30,6 +30,7 @@
 		"vite": "^5.4.11"
 	},
 	"dependencies": {
+		"@svelte-use/core": "^0.11.0",
 		"phosphor-svelte": "^3.0.1"
 	}
 }

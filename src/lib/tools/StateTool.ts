@@ -22,6 +22,8 @@ export class StateTool implements Tool {
 
 	onMouseUp(_event: MouseEvent, _renderer: FSMRenderer) {}
 
+	onContextMenu(_event: MouseEvent, _renderer: FSMRenderer, _fsm: FSM) {}
+
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {
 		const rect = renderer.canvas.getBoundingClientRect();
 		return {

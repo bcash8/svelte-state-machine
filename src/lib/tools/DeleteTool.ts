@@ -1,5 +1,5 @@
 import type { Tool, ToolName } from './Tool';
-import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
+import { FSMRenderer } from '$lib/FSMRenderer.svelte';
 import type { FSM } from '$lib/states/FSM';
 
 export class DeleteTool implements Tool {
@@ -30,14 +30,7 @@ export class DeleteTool implements Tool {
 			for (const toStateNames of fromState.transitions.values()) {
 				for (const toStateName of toStateNames) {
 					const toStatePos = renderer.getStatePosition(toStateName);
-					const controlPoint = renderer.getControlPoint(
-						fromStatePos,
-						toStatePos,
-						renderer.stateRadius
-					);
-					if (
-						renderer.nearQuadraticBeizerCurve({ x, y }, fromStatePos, toStatePos, controlPoint, 10)
-					) {
+					if (renderer.isPointNearTransitionCurve({ x, y }, fromStatePos, toStatePos, 10)) {
 						fromState.removeTransition(toStateName);
 						renderer.draw();
 						return;
@@ -46,6 +39,8 @@ export class DeleteTool implements Tool {
 			}
 		}
 	}
+
+	onContextMenu(_event: MouseEvent, _renderer: FSMRenderer, _fsm: FSM) {}
 
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {
 		const rect = renderer.canvas.getBoundingClientRect();

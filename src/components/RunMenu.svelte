@@ -3,16 +3,18 @@
 	import Play from 'phosphor-svelte/lib/Play';
 	import Pause from 'phosphor-svelte/lib/Pause';
 	import { ArrowCounterClockwise } from 'phosphor-svelte';
+
+	let { onRun }: { onRun: () => void } = $props();
 </script>
 
-{#snippet Button(props: { name: string; icon: Component })}
-	<button class="button" title={props.name}>
+{#snippet Button(props: { name: string; icon: Component; onClick?: () => void })}
+	<button class="button" title={props.name} onclick={props.onClick}>
 		<props.icon />
 	</button>
 {/snippet}
 
 <div class="toolbar">
-	{@render Button({ name: 'Run', icon: Play })}
+	{@render Button({ name: 'Run', icon: Play, onClick: onRun })}
 	{@render Button({ name: 'Pause', icon: Pause })}
 	{@render Button({ name: 'Reset', icon: ArrowCounterClockwise })}
 </div>

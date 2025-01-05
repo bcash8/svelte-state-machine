@@ -3,9 +3,11 @@ import type { State } from './State';
 export abstract class FSM {
 	states: Map<string, State>;
 	private nextStateNumber = 0;
+	initialState: string | null;
 
 	constructor() {
 		this.states = new Map();
+		this.initialState = null;
 	}
 
 	addState(state: State) {
@@ -41,6 +43,10 @@ export abstract class FSM {
 
 	getNextStateNumber() {
 		return this.nextStateNumber++;
+	}
+
+	setInitialState(stateName: string | null) {
+		this.initialState = stateName;
 	}
 
 	abstract run(input: string[]): boolean;

@@ -24,7 +24,7 @@ export class ToolManager {
 	}
 
 	handleMouseDown(event: MouseEvent): void {
-		this.currentTool?.onMouseDown?.(event, this.renderer, this.fsm);
+		if (event.button === 0) this.currentTool?.onMouseDown?.(event, this.renderer, this.fsm);
 	}
 
 	handleMouseMove(event: MouseEvent): void {
@@ -32,6 +32,10 @@ export class ToolManager {
 	}
 
 	handleMouseUp(event: MouseEvent): void {
-		this.currentTool?.onMouseUp?.(event, this.renderer, this.fsm);
+		if (event.button === 0) this.currentTool?.onMouseUp?.(event, this.renderer, this.fsm);
+	}
+
+	handleContextMenu(event: MouseEvent): void {
+		this.currentTool?.onContextMenu?.(event, this.renderer, this.fsm);
 	}
 }

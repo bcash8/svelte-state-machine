@@ -12,4 +12,5 @@ export interface Tool {
 	onMouseDown(event: MouseEvent, renderer: FSMRenderer, fsm: FSM): void;
 	onMouseMove(event: MouseEvent, renderer: FSMRenderer, fsm: FSM): void;
 	onMouseUp(event: MouseEvent, renderer: FSMRenderer, fsm: FSM): void;
+	onContextMenu(event: MouseEvent, renderer: FSMRenderer, fsm: FSM): void;
 }

@@ -1,5 +1,7 @@
 import type { FSMRenderer } from '$lib/FSMRenderer.svelte';
+import type { FSM } from '$lib/states/FSM';
 import type { Tool, ToolName } from './Tool';
+import { contextMenuState } from '$lib/contextMenuState.svelte';
 
 export class SelectTool implements Tool {
 	name: ToolName = 'Select';
@@ -44,6 +46,52 @@ export class SelectTool implements Tool {
 		this.isDragging = false;
 		this.selectedState = null;
 		renderer.selectedStateName = null;
+	}
+
+	onContextMenu(event: MouseEvent, renderer: FSMRenderer, fsm: FSM) {
+		const { x, y } = this.getCanvasCoordinates(event, renderer);
+		const clickedStateName = renderer.getStateAtPosition({ x, y });
+		if (!clickedStateName) return;
+		const clickedState = fsm.getState(clickedStateName);
+		if (!clickedState) return;
+
+		event.preventDefault();
+		event.stopPropagation();
+
+		const menuOptions = [
+			{
+				label: 'Initial',
+				action: () => {
+					fsm.setInitialState(clickedStateName);
+					renderer.draw();
+
+					contextMenuState.set({
+						visible: false,
+						position: { x: event.clientX, y: event.clientY },
+						options: []
+					});
+				}
+			},
+			{
+				label: 'Accepting',
+				action: () => {
+					clickedState.isAccepting = true;
+					renderer.draw();
+
+					contextMenuState.set({
+						visible: false,
+						position: { x: event.clientX, y: event.clientY },
+						options: []
+					});
+				}
+			}
+		];
+
+		contextMenuState.set({
+			visible: true,
+			position: { x: event.clientX, y: event.clientY },
+			options: menuOptions
+		});
 	}
 
 	private getCanvasCoordinates(event: MouseEvent, renderer: FSMRenderer) {
