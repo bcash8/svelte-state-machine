@@ -34,7 +34,7 @@ button {
   background: none;
   outline: none;
   font: inherit;
-  padding: 0.5rem;
+  padding: 0.25rem;
   border-radius: 0.25rem;
 }
 
@@ -81,6 +81,6 @@ textarea {
 /* Svelte-specific styles */
 :root {
   --primary-color: #6ac254;
-
   --background-color: #1C1E22;
+  --panel-color: #0000005b;
 }

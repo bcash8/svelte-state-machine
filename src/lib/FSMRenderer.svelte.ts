@@ -141,14 +141,9 @@ export class FSMRenderer {
 				: 'white';
 		this.ctx.fill();
 
-		this.ctx.fillStyle = 'black';
-		this.ctx.font = `${this.fontSize}px Arial`;
-		this.ctx.textAlign = 'center';
-		this.ctx.textBaseline = 'middle';
-		this.ctx.fillText(state.name, x, y);
-
 		if (state.isAccepting) {
 			this.ctx.strokeStyle = 'black';
+			this.ctx.lineWidth = 2;
 			this.ctx.beginPath();
 			this.ctx.arc(x, y, this.stateRadius - 5, 0, 2 * Math.PI);
 			this.ctx.stroke();
@@ -159,13 +154,23 @@ export class FSMRenderer {
 				x: x - this.stateRadius,
 				y: y
 			};
-			this.ctx.fillStyle = 'white';
+
+			this.ctx.fillStyle =
+				isCurrent || this.#highlightedStates.has(state.name)
+					? getComputedStyle(this.ctx.canvas).getPropertyValue('--primary-color')
+					: 'white';
 			this.ctx.beginPath();
 			this.ctx.moveTo(arrowPoint.x, arrowPoint.y);
-			this.ctx.lineTo(arrowPoint.x - this.stateRadius, arrowPoint.y - this.stateRadius);
-			this.ctx.lineTo(arrowPoint.x - this.stateRadius, arrowPoint.y + this.stateRadius);
+			this.ctx.lineTo(arrowPoint.x - this.stateRadius / 2, arrowPoint.y - this.stateRadius / 2);
+			this.ctx.lineTo(arrowPoint.x - this.stateRadius / 2, arrowPoint.y + this.stateRadius / 2);
 			this.ctx.fill();
 		}
+
+		this.ctx.fillStyle = 'black';
+		this.ctx.font = `${this.fontSize}px Arial`;
+		this.ctx.textAlign = 'center';
+		this.ctx.textBaseline = 'middle';
+		this.ctx.fillText(state.name, x, y);
 	}
 
 	drawTransition(transition: { from: string; to: string; input: string }) {
@@ -452,9 +457,9 @@ export class FSMRenderer {
 }
 
 const config = {
-	defaultStateRaidus: 20,
-	defaultArrowThickness: 2,
+	defaultStateRaidus: 30,
+	defaultArrowThickness: 4,
 	defaultArrowLength: 15,
-	defaultFontSize: 16,
+	defaultFontSize: 19,
 	defaultTransitionTextOffset: 15
 };

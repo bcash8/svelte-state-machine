@@ -25,7 +25,7 @@
 		top: 10px;
 		right: 10px;
 		width: fit-content;
-		background-color: #0000005b;
+		background-color: var(--panel-color);
 		border-radius: 0.25rem;
 		overflow: hidden;
 		z-index: 1;

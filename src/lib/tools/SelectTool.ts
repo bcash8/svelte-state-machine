@@ -60,9 +60,10 @@ export class SelectTool implements Tool {
 
 		const menuOptions = [
 			{
-				label: 'Initial',
+				label: fsm.initialState !== clickedStateName ? 'Initial' : 'Not Initial',
 				action: () => {
-					fsm.setInitialState(clickedStateName);
+					const initialStateValue = fsm.initialState !== clickedStateName ? clickedStateName : null;
+					fsm.setInitialState(initialStateValue);
 					renderer.draw();
 
 					contextMenuState.set({
@@ -73,9 +74,9 @@ export class SelectTool implements Tool {
 				}
 			},
 			{
-				label: 'Accepting',
+				label: clickedState.isAccepting ? 'Non-Accepting' : 'Accepting',
 				action: () => {
-					clickedState.isAccepting = true;
+					clickedState.isAccepting = !clickedState.isAccepting;
 					renderer.draw();
 
 					contextMenuState.set({

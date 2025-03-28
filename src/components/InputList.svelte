@@ -10,18 +10,27 @@
 		setInputsToTest([...inputsToTest, inputBoxValue]);
 		inputBoxValue = '';
 	}
+
+	function removeInput(index: number) {
+		const inputs = [...inputsToTest];
+		inputs.splice(index, 1);
+		setInputsToTest(inputs);
+	}
 </script>
 
 <div class="panel column">
-	<div class="row">
-		<input type="text" bind:value={inputBoxValue} />
-		<button onclick={onAddInput}><Plus /></button>
-	</div>
+	<p>Input Strings</p>
 	<ul>
-		{#each inputsToTest as input}
-			<li>{input}</li>
+		{#each inputsToTest as input, i}
+			<li>
+				<button onclick={() => removeInput(i)} class="input-string-button">{input}</button>
+			</li>
 		{/each}
 	</ul>
+	<div class="row">
+		<input type="text" bind:value={inputBoxValue} placeholder="Add new input string" />
+		<button onclick={onAddInput}><Plus /></button>
+	</div>
 </div>
 
 <style>
@@ -30,7 +39,7 @@
 		top: 60px;
 		right: 10px;
 		width: fit-content;
-		background-color: #0000005b;
+		background-color: var(--panel-color);
 		color: white;
 		border-radius: 0.25rem;
 		overflow: hidden;
@@ -39,7 +48,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		padding: 0 0.25rem;
+		padding: 0.5rem;
 	}
 
 	.column {
@@ -57,6 +66,15 @@
 
 	ul {
 		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+	}
+
+	ul > li {
+		width: 100%;
 	}
 
 	button {
@@ -64,12 +82,22 @@
 		justify-content: center;
 		align-items: center;
 		width: fit-content;
-		padding: 0.5rem;
-		aspect-ratio: 1 / 1;
 		background-color: #00000000;
 		cursor: pointer;
 		opacity: 0.7;
 		transition: 0.2s ease-in-out;
+		color: white;
+	}
+
+	.input-string-button {
+		opacity: 1;
+		width: 100%;
+		text-align: left;
+		background-color: #111;
+	}
+
+	.input-string-button:hover {
+		background-color: black;
 	}
 
 	button:hover {
